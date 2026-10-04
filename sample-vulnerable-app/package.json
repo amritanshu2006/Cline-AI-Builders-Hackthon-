@@ -1,0 +1,19 @@
+{
+  "name": "sample-vulnerable-app",
+  "version": "1.0.0",
+  "description": "Deliberately vulnerable Express app used as PatchProof's demo target",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js",
+    "test": "jest --runInBand"
+  },
+  "dependencies": {
+    "express": "^4.17.1",
+    "lodash": "4.17.15",
+    "jsonwebtoken": "8.5.1"
+  },
+  "devDependencies": {
+    "jest": "^29.7.0",
+    "supertest": "^6.3.4"
+  }
+}

@@ -1,0 +1,46 @@
+[
+  {
+    "id": "f1-path-traversal",
+    "kind": "code",
+    "tool": "semgrep",
+    "severity": "HIGH",
+    "title": "Path traversal in /files",
+    "file": "server.js",
+    "line": 17,
+    "description": "The filename query parameter is joined to the public folder without validation.",
+    "ruleId": "path-traversal"
+  },
+  {
+    "id": "f2-command-injection",
+    "kind": "code",
+    "tool": "semgrep",
+    "severity": "CRITICAL",
+    "title": "Command Injection in /ping",
+    "file": "server.js",
+    "line": 27,
+    "description": "Passes user input directly to a shell, allowing arbitrary command execution.",
+    "ruleId": "command-injection"
+  },
+  {
+    "id": "f3-prototype-pollution",
+    "kind": "code",
+    "tool": "semgrep",
+    "severity": "HIGH",
+    "title": "Prototype Pollution in /preferences",
+    "file": "server.js",
+    "line": 37,
+    "description": "lodash.set allows traversing into __proto__, leading to prototype pollution.",
+    "ruleId": "prototype-pollution"
+  },
+  {
+    "id": "f4-hardcoded-secret",
+    "kind": "code",
+    "tool": "semgrep",
+    "severity": "HIGH",
+    "title": "Hardcoded JWT Secret",
+    "file": "server.js",
+    "line": 12,
+    "description": "JWT secret is hardcoded in the source code.",
+    "ruleId": "jwt"
+  }
+]

@@ -1,0 +1,69 @@
+# PatchProof local Semgrep rules.
+# Covers the four vulnerability classes the demo app exercises:
+#   1) Path traversal  (CWE-22)
+#   2) Command injection (CWE-78) via child_process.exec with user input
+#   3) Hardcoded JWT secret
+#   4) Prototype pollution via lodash _.set with user-controlled paths
+#
+# Use these locally so the demo doesn't need internet access.
+
+  - id: patchproof-path-traversal
+    message: >-
+      User input flows into a filesystem path without a containment check.
+      Confirm the resolved path stays inside the intended directory.
+    severity: WARNING
+    languages: [javascript, typescript]
+    pattern-either:
+      - pattern: |
+          $REQ.query.$X
+          ...
+          fs.readFile(path.join(..., $REQ.query.$X), ...)
+      - pattern: |
+          $REQ.query.$X
+          ...
+          fs.readFile(path.resolve(..., $REQ.query.$X), ...)
+      - pattern: |
+          $REQ.body.$X
+          ...
+          fs.readFile(path.join(..., $REQ.body.$X), ...)
+
+  - id: patchproof-command-injection
+    message: >-
+      User-controlled data reaches child_process.exec with a shell string.
+      Use execFile with an argument list instead, or sanitise the input.
+    severity: ERROR
+    patterns:
+      - pattern-either:
+          - pattern: exec(`...${$X}...`, ...)
+          - pattern: exec(`...${$REQ.query.$X}...`, ...)
+          - pattern: exec(`...${$REQ.body.$X}...`, ...)
+          - pattern: exec(`...${$REQ.params.$X}...`, ...)
+      - metavariable-regex:
+          metavariable: $X
+          regex: '.*'
+
+  - id: patchproof-hardcoded-jwt-secret
+    message: >-
+      A JWT secret looks hard-coded. Use an environment variable or a secret
+      manager instead.
+    severity: ERROR
+    languages: [javascript, typescript]
+    patterns:
+      - pattern-either:
+          - pattern: jwt.sign(..., "...Secret...Secret...Secret...", ...)
+          - pattern: jwt.sign(..., "Secret...Secret...Secret", ...)
+          - pattern: jwt.verify(..., "...Secret...Secret...Secret...", ...)
+      - metavariable-regex:
+          metavariable: $SECRET
+          regex: '^[A-Za-z0-9_\-]{8,}$'
+
+  - id: patchproof-lodash-set-user-path
+    message: >-
+      lodash _.set is called with a user-controlled path. Validate or hard-code
+      the path before calling _.set to prevent prototype pollution.
+    severity: WARNING
+    languages: [javascript, typescript]
+    pattern-either:
+      - pattern: _.set($OBJ, $REQ.body.$X, ...)
+      - pattern: _.set($OBJ, $REQ.query.$X, ...)
+      - pattern: _.set($OBJ, $REQ.params.$X, ...)

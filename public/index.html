@@ -1,0 +1,440 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>PatchProof Dashboard</title>
+<meta name="viewport" content="width=device-width,initial-scale=1.0">
+<style>
+:root{--bg:#f8f9fa;--card:#fff;--text:#1f2937;--muted:#6b7280;--border:#e5e7eb;
+  --green:#03543f;--green-bg:#def7ec;--green-bright:#059669;
+  --orange-bg:#fdf6b2;--orange:#723b13;--red:#b91c1c;--red-bg:#fee2e2;
+  --blue-bg:#ebf5ff;--blue:#3f83f8;--navy:#1e3a5f}
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;background:var(--bg);color:var(--text);font-size:14px}
+h1,h2,h3,h4,h5{margin:0}
+.text-sm{font-size:12px}.text-muted{color:var(--muted)}.fw-bold{font-weight:600}
+.flex{display:flex;align-items:center}.gap-2{gap:8px}.gap-4{gap:16px}
+.justify-between{display:flex;justify-content:space-between;align-items:center}
+.w-full{width:100%}
+.pill{padding:4px 10px;border-radius:999px;font-size:11px;font-weight:600;text-transform:uppercase;display:inline-flex;align-items:center;gap:6px}
+.pill-green{background:var(--green-bg);color:var(--green);border:1px solid #bcdecb}
+.pill-orange{background:var(--orange-bg);color:var(--orange);border:1px solid #f8df72}
+.pill-red{background:var(--red-bg);color:var(--red);border:1px solid #fecaca}
+.pill-blue{background:var(--blue-bg);color:var(--blue);border:1px solid #c7dbfb}
+.pill-gray{background:#f1f5f9;color:var(--muted);border:1px solid #e2e8f0}
+.navbar{background:var(--card);border-bottom:1px solid var(--border);padding:16px 24px}
+.logo{font-size:20px;font-weight:800;color:var(--navy)}
+.nav-divider{width:1px;height:24px;background:var(--border);margin:0 16px}
+.nav-subtitle{font-size:12px;font-weight:600;color:var(--muted);letter-spacing:.05em}
+.container{padding:24px;max-width:1280px;margin:0 auto}
+.card{background:var(--card);border:1px solid var(--border);border-radius:6px;padding:20px;margin-bottom:16px}
+.status-dot{width:8px;height:8px;border-radius:50%;display:inline-block;margin-right:8px}
+.status-dot.running{background:var(--blue);animation:pulse 1.5s infinite}
+.status-dot.idle{background:#94a3b8}
+.status-dot.done{background:var(--green-bright)}
+.status-dot.error{background:var(--red)}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:0.5}}
+.toolbar{display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-top:12px}
+.toolbar input{background:var(--card);border:1px solid var(--border);padding:8px 12px;border-radius:6px;font-size:14px;flex:1;min-width:240px;font-family:monospace}
+.btn{border:none;padding:8px 16px;border-radius:6px;font-weight:600;cursor:pointer;font-size:14px}
+.btn-primary{background:var(--navy);color:#fff}
+.btn-outline{background:transparent;color:var(--navy);border:1px solid var(--navy)}
+.btn:disabled{opacity:0.5;cursor:not-allowed}
+.error-banner{background:var(--red-bg);border:1px solid #fca5a5;color:var(--red);padding:12px;border-radius:6px;margin-top:12px;font-family:monospace;font-size:13px;white-space:pre-wrap;display:none}
+.findings{display:flex;flex-direction:column;gap:10px;margin-top:16px}
+.finding{background:var(--card);border:1px solid var(--border);border-radius:6px;padding:14px 18px;display:flex;justify-content:space-between;align-items:center;cursor:pointer}
+.finding:hover{border-color:var(--blue)}
+.finding.active{border-color:var(--blue);background:var(--blue-bg)}
+.finding h3{font-size:15px;margin-bottom:4px}
+.finding-meta{font-size:12px;color:var(--muted)}
+.detail{padding-top:24px}
+.detail-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-top:12px}
+.check{background:#fff;border:1px solid var(--border);border-radius:6px;padding:12px}
+.check.pending{opacity:0.6}
+.check h4{font-size:11px;color:var(--muted);margin-bottom:6px;text-transform:uppercase;letter-spacing:.04em}
+.check .result{font-size:13px;font-weight:600}
+.check.passed .result{color:var(--green)}
+.check.failed .result{color:var(--red)}
+.patch-box{background:#0d0f14;color:#e4e4e7;padding:12px;border-radius:6px;font-family:monospace;font-size:12px;overflow-x:auto;max-height:400px;overflow-y:auto;white-space:pre;margin-top:8px}
+.tabs{display:flex;gap:4px;margin-top:20px;border-bottom:1px solid var(--border)}
+.tab{padding:8px 16px;cursor:pointer;color:var(--muted);font-size:13px;font-weight:600;border-bottom:2px solid transparent;margin-bottom:-1px}
+.tab.active{color:var(--navy);border-bottom-color:var(--navy)}
+.tab-pane{display:none;padding:16px 0}
+.tab-pane.active{display:block}
+.log{background:#0d0f14;color:#e4e4e7;padding:12px;border-radius:6px;font-family:monospace;font-size:12px;max-height:380px;overflow-y:auto;white-space:pre-wrap}
+.diff-line.add{color:#86efac}
+.diff-line.rem{color:#fca5a5}
+.diff-line.ctx{color:#94a3b8}
+.stat-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-top:16px}
+.stat{background:var(--card);border:1px solid var(--border);border-radius:6px;padding:14px;text-align:center}
+.stat .v{font-size:24px;font-weight:700}.stat .l{font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:.05em}
+.empty{text-align:center;color:var(--muted);padding:40px;font-size:14px}
+.diag{font-family:monospace;font-size:12px;color:var(--muted);white-space:pre-wrap}
+</style>
+</head>
+<body>
+<nav class="navbar flex justify-between">
+  <div class="flex">
+    <div class="logo">🛡️ PatchProof</div>
+    <div class="nav-divider"></div>
+    <div class="nav-subtitle">SECURITY REMEDIATION</div>
+  </div>
+  <div class="flex gap-4">
+    <div id="run-id-display" class="text-sm text-muted">No run yet</div>
+    <div id="mode-badge" class="pill pill-gray">…</div>
+    <div id="status-pill" class="pill pill-gray">
+      <span class="status-dot idle"></span>
+      <span id="status-text">idle</span>
+    </div>
+  </div>
+</nav>
+
+<div class="container">
+  <!-- Backend error banner -->
+  <div id="error-banner" class="error-banner"></div>
+
+  <!-- Start panel -->
+  <div class="card" id="start-card">
+    <h2 style="font-size:18px;color:var(--navy)">Start a run</h2>
+    <div class="text-sm text-muted" style="margin-top:6px">Enter a local directory (the sample app works out of the box) or a git URL.</div>
+    <div class="toolbar">
+      <input id="target-input" type="text" placeholder="sample-vulnerable-app  (or /absolute/path or git URL)" />
+      <select id="max-input" class="btn btn-outline" style="font-family:inherit">
+        <option value="1">Top 1</option>
+        <option value="3" selected>Top 3</option>
+        <option value="5">Top 5</option>
+      </select>
+      <button class="btn btn-primary" id="run-btn">▶ Run pipeline</button>
+    </div>
+    <div id="start-error" class="error-banner" style="display:block;display:none"></div>
+  </div>
+
+  <!-- Run summary -->
+  <div id="summary-card" class="card" style="display:none">
+    <div class="flex justify-between" style="margin-bottom:8px">
+      <h2 style="font-size:18px;color:var(--navy)" id="summary-title">Run summary</h2>
+      <div class="text-sm text-muted" id="summary-elapsed"></div>
+    </div>
+    <div class="stat-grid">
+      <div class="stat"><div class="v" id="stat-total">0</div><div class="l">Total</div></div>
+      <div class="stat"><div class="v" style="color:var(--green-bright)" id="stat-verified">0</div><div class="l">Verified</div></div>
+      <div class="stat"><div class="v" style="color:var(--blue)" id="stat-running">0</div><div class="l">In progress</div></div>
+      <div class="stat"><div class="v" style="color:var(--red)" id="stat-failed">0</div><div class="l">Failed / skipped</div></div>
+    </div>
+    <div id="summary-line" class="text-sm text-muted" style="margin-top:12px"></div>
+  </div>
+
+  <!-- Findings list -->
+  <div id="findings-card" class="card" style="display:none">
+    <div class="flex justify-between" style="margin-bottom:12px">
+      <h2 style="font-size:18px;color:var(--navy)">Findings</h2>
+      <div class="text-sm text-muted"><span id="findings-count">0</span> processed</div>
+    </div>
+    <div id="findings-list" class="findings">
+      <div class="empty">No findings yet — start a run.</div>
+    </div>
+  </div>
+
+  <!-- Per-finding detail -->
+  <div id="detail-card" class="card detail" style="display:none">
+    <div class="flex justify-between" style="margin-bottom:6px">
+      <h2 style="font-size:16px" id="detail-title">—</h2>
+      <div class="flex gap-2">
+        <span id="detail-status" class="pill pill-gray">…</span>
+        <span id="detail-attempts" class="pill pill-gray">… attempts</span>
+        <span id="detail-elapsed" class="pill pill-gray">…</span>
+      </div>
+    </div>
+    <div class="text-sm text-muted" id="detail-subtitle">—</div>
+
+    <div class="detail-grid">
+      <div class="check" id="check-exploit">
+        <h4>Exploit regression</h4>
+        <div class="result">not run</div>
+        <div class="text-sm text-muted" style="margin-top:6px">—</div>
+      </div>
+      <div class="check" id="check-baseline">
+        <h4>Baseline test suite</h4>
+        <div class="result">not run</div>
+        <div class="text-sm text-muted" style="margin-top:6px">—</div>
+      </div>
+      <div class="check" id="check-integrity">
+        <h4>Test integrity</h4>
+        <div class="result">not run</div>
+        <div class="text-sm text-muted" style="margin-top:6px">—</div>
+      </div>
+    </div>
+
+    <div class="tabs">
+      <div class="tab active" data-tab="overview">Overview</div>
+      <div class="tab" data-tab="diff">Patch diff</div>
+      <div class="tab" data-tab="exploit">Exploit test</div>
+      <div class="tab" data-tab="log">Run log</div>
+    </div>
+
+    <div class="tab-pane active" id="pane-overview">
+      <div class="card" style="margin:0">
+        <h3 style="font-size:13px;color:var(--muted);text-transform:uppercase">Plain-language summary</h3>
+        <div id="overview-explanation" class="text-sm" style="margin-top:8px;white-space:pre-wrap">—</div>
+      </div>
+      <div class="card" style="margin:16px 0 0">
+        <h3 style="font-size:13px;color:var(--muted);text-transform:uppercase">Patch stats</h3>
+        <div class="text-sm" style="margin-top:8px" id="overview-stats">—</div>
+      </div>
+      <div class="card" style="margin:16px 0 0">
+        <h3 style="font-size:13px;color:var(--muted);text-transform:uppercase">Failure reason</h3>
+        <pre id="overview-reason" class="diag" style="display:none"></pre>
+      </div>
+    </div>
+
+    <div class="tab-pane" id="pane-diff">
+      <pre class="patch-box" id="diff-content">Run the pipeline to see the diff.</pre>
+    </div>
+
+    <div class="tab-pane" id="pane-exploit">
+      <pre class="patch-box" id="exploit-content">—</pre>
+    </div>
+
+    <div class="tab-pane" id="pane-log">
+      <pre class="log" id="log-content">—</pre>
+    </div>
+  </div>
+</div>
+
+<script>
+let state = null;
+let sel = null;
+const $ = (i) => document.getElementById(i);
+
+// Tab handling
+document.querySelectorAll('.tab').forEach((t) => {
+  t.onclick = (e) => {
+    document.querySelectorAll('.tab').forEach((x) => x.classList.remove('active'));
+    document.querySelectorAll('.tab-pane').forEach((x) => x.classList.remove('active'));
+    e.target.classList.add('active');
+    document.getElementById('pane-' + e.target.dataset.tab).classList.add('active');
+  };
+});
+
+function fmtDur(ms) {
+  if (ms == null) return '—';
+  if (ms < 1000) return ms + 'ms';
+  if (ms < 60000) return (ms / 1000).toFixed(1) + 's';
+  const m = Math.floor(ms / 60000); const s = Math.floor((ms % 60000) / 1000);
+  return `${m}m ${String(s).padStart(2, '0')}s`;
+}
+
+const STATUS_LABEL = {
+  queued: 'queued',
+  reproducing: 'Proving bug',
+  fixing: 'Writing fix',
+  verifying: 'Verifying',
+  verified: 'VERIFIED',
+  failed: 'FAILED',
+  'invalid-exploit-test': 'Invalid exploit test',
+  'not-reproduced': 'Not reproduced',
+};
+const STATUS_CLASS = {
+  queued: 'pill-gray',
+  reproducing: 'pill-blue',
+  fixing: 'pill-blue',
+  verifying: 'pill-blue',
+  verified: 'pill-green',
+  failed: 'pill-red',
+  'invalid-exploit-test': 'pill-orange',
+  'not-reproduced': 'pill-orange',
+};
+
+function render() {
+  if (!state) return;
+
+  // Header
+  $('run-id-display').textContent = state.runId ? `run ${state.runId}` : 'No run yet';
+  const modeBadge = $('mode-badge');
+  if (state.mode) {
+    modeBadge.textContent = state.mode;
+    modeBadge.className = 'pill ' + (state.mode.includes('REPLAY') ? 'pill-orange' : 'pill-green');
+  }
+  const statusPill = $('status-pill');
+  statusPill.className = 'pill pill-' + (state.status === 'error' ? 'red' : state.status === 'done' ? 'green' : state.status === 'running' ? 'blue' : 'gray');
+  statusPill.innerHTML = `<span class="status-dot ${state.status}"></span><span id="status-text">${state.status}</span>`;
+
+  // Backend error banner
+  const banner = $('error-banner');
+  if (state.error) {
+    banner.textContent = 'Backend error: ' + state.error;
+    banner.style.display = 'block';
+  } else banner.style.display = 'none';
+
+  // Summary card
+  const findings = state.findings || [];
+  const hasStarted = state.startedAt;
+  if (hasStarted) {
+    $('summary-card').style.display = 'block';
+    $('findings-card').style.display = 'block';
+    const total = findings.length;
+    const verified = findings.filter((f) => f.status === 'verified').length;
+    const failed = findings.filter((f) => ['failed','invalid-exploit-test','not-reproduced','baseline-failed','fix-failed'].includes(f.status)).length;
+    const running = findings.filter((f) => ['reproducing','fixing','verifying'].includes(f.status)).length;
+    $('stat-total').textContent = total;
+    $('stat-verified').textContent = verified;
+    $('stat-running').textContent = running;
+    $('stat-failed').textContent = failed;
+    $('summary-line').textContent = state.summary || (state.error ? '' : (state.status === 'running' ? `Working on ${running} of ${total}…` : ''));
+    if (state.startedAt && state.finishedAt) {
+      $('summary-elapsed').textContent = `started ${state.startedAt.slice(11,19)} · finished ${state.finishedAt.slice(11,19)}`;
+    } else if (state.startedAt) {
+      $('summary-elapsed').textContent = `started ${state.startedAt.slice(11,19)}`;
+    } else $('summary-elapsed').textContent = '';
+  }
+
+  // Findings list
+  const list = $('findings-list');
+  $('findings-count').textContent = findings.length;
+  if (!findings.length) {
+    list.innerHTML = '<div class="empty">No findings yet — start a run.</div>';
+  } else {
+    list.innerHTML = '';
+    findings.forEach((f, i) => {
+      const el = document.createElement('div');
+      el.className = 'finding' + (i === sel ? ' active' : '');
+      el.innerHTML = `
+        <div>
+            <div class="fw-bold" style="margin-bottom:4px">${escapeHtml(f.title || f.id)}</div>
+            <div class="finding-meta">${escapeHtml(f.ruleId || '')} · ${escapeHtml(f.file || '')}${f.line ? ':' + f.line : ''} · kind=${escapeHtml(f.kind || 'code')}</div>
+          </div>
+          <div class="flex gap-2">
+            <span class="pill ${severityPill(f.severity)}">${escapeHtml(f.severity || '')}</span>
+            <span class="pill ${STATUS_CLASS[f.status] || 'pill-gray'}">${STATUS_LABEL[f.status] || escapeHtml(f.status || '—')}</span>
+          </div>
+        `;
+      el.onclick = () => { sel = i; render(); };
+      list.appendChild(el);
+    });
+  }
+
+  // Detail
+  if (sel !== null && findings[sel]) renderDetail(findings[sel]);
+  else $('detail-card').style.display = 'none';
+}
+
+function renderDetail(f) {
+  $('detail-card').style.display = 'block';
+  $('detail-title').textContent = f.title || f.id;
+  $('detail-subtitle').textContent = `id ${f.id} · ${f.ruleId || 'CWE-XX'} · ${f.file || ''}${f.line ? ':' + f.line : ''}`;
+  $('detail-status').textContent = STATUS_LABEL[f.status] || f.status;
+  $('detail-status').className = 'pill ' + (STATUS_CLASS[f.status] || 'pill-gray');
+  $('detail-attempts').textContent = `${f.attempts || 0} attempt${f.attempts === 1 ? '' : 's'}`;
+  $('detail-attempts').className = 'pill ' + (STATUS_CLASS[f.status] || 'pill-gray');
+  $('detail-elapsed').textContent = fmtDur(f.elapsedMs);
+
+  const ev = f.evidence || {};
+  const beforeTests = ev.beforeTestsRun || {};
+  const afterTests = ev.afterTestsRun || {};
+
+  // Three checks: all driven by real evidence, or "not run"
+  const exploitEl = $('check-exploit');
+  if (f.status === 'verified' || f.status === 'failed') {
+    exploitEl.className = 'check ' + (ev.before ? 'passed' : 'pending');
+    exploitEl.innerHTML = `
+      <h4>Exploit regression</h4>
+      <div class="result">${ev.before ? 'failed before fix → passed after fix' : 'not reproduced'}</div>
+      <div class="text-sm text-muted" style="margin-top:6px">${afterTests.pass != null ? `${afterTests.pass} passed · ${afterTests.fail ?? 0} failed` : '—'}</div>
+    `;
+  } else {
+    exploitEl.className = 'check pending';
+    exploitEl.innerHTML = `<h4>Exploit regression</h4><div class="result">${STATUS_LABEL[f.status] || 'not run'}</div><div class="text-sm text-muted" style="margin-top:6px">—</div>`;
+  }
+
+  const baselineEl = $('check-baseline');
+  if (f.status === 'verified') {
+    baselineEl.className = 'check passed';
+    baselineEl.innerHTML = `<h4>Baseline test suite</h4><div class="result">passes after fix</div><div class="text-sm text-muted" style="margin-top:6px">all baseline tests preserved</div>`;
+  } else if (f.status === 'failed' || f.status === 'fix-failed') {
+    baselineEl.className = 'check failed';
+    baselineEl.innerHTML = `<h4>Baseline test suite</h4><div class="result">regression</div><div class="text-sm text-muted" style="margin-top:6px">see run log</div>`;
+  } else {
+    baselineEl.className = 'check pending';
+    baselineEl.innerHTML = `<h4>Baseline test suite</h4><div class="result">${STATUS_LABEL[f.status] || 'not run'}</div><div class="text-sm text-muted" style="margin-top:6px">—</div>`;
+  }
+
+  const integEl = $('check-integrity');
+  if (f.status === 'verified') {
+    integEl.className = 'check passed';
+    integEl.innerHTML = `<h4>Test integrity</h4><div class="result">no test edits accepted</div><div class="text-sm text-muted" style="margin-top:6px">exploit &amp; baseline tests unchanged</div>`;
+  } else if (f.attempts > 0) {
+    integEl.className = 'check failed';
+    integEl.innerHTML = `<h4>Test integrity</h4><div class="result">agent edited tests — reverted</div><div class="text-sm text-muted" style="margin-top:6px">see run log</div>`;
+  } else {
+    integEl.className = 'check pending';
+    integEl.innerHTML = `<h4>Test integrity</h4><div class="result">${STATUS_LABEL[f.status] || 'not run'}</div><div class="text-sm text-muted" style="margin-top:6px">—</div>`;
+  }
+
+  // Tabs content
+  $('overview-explanation').textContent = ev.explanation || '—';
+  const stats = ev.diffStats || { added: 0, removed: 0, files: [] };
+  $('overview-stats').textContent = stats.files.length
+    ? `${stats.files.length} file${stats.files.length === 1 ? '' : 's'} changed · +${stats.added} -${stats.removed}\n${stats.files.map((f) => ' • ' + f).join('\n')}`
+    : 'no diff yet';
+  $('diff-content').textContent = ev.diff || (ev.fullPatch ? '(full patch saved – no fix-only diff)' : 'no diff available');
+  $('exploit-content').textContent = ev.exploitTest || 'no exploit test on file';
+  $('log-content').textContent = (state.logs || []).slice(-200).join('\n');
+
+  const reason = $('overview-reason');
+  if (f.reason) { reason.style.display = 'block'; reason.textContent = f.reason; }
+  else reason.style.display = 'none';
+}
+
+function severityPill(s) {
+  const k = String(s || '').toUpperCase();
+  if (k === 'CRITICAL' || k === 'HIGH') return 'pill-orange';
+  if (k === 'ERROR') return 'pill-red';
+  return 'pill-gray';
+}
+function escapeHtml(s) { return String(s ?? '').replace(/[&<>"']/g, (c) => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
+
+// SSE
+const es = new EventSource('/api/events');
+es.addEventListener('state', (m) => {
+  try {
+    state = JSON.parse(m.data);
+    if (sel === null && state.findings && state.findings.length > 0) sel = 0;
+    render();
+  } catch (e) {
+    $('error-banner').textContent = 'Failed to parse state: ' + e.message;
+    $('error-banner').style.display = 'block';
+  }
+});
+es.onerror = () => {
+  $('error-banner').textContent = 'Lost connection to server.';
+  $('error-banner').style.display = 'block';
+};
+
+// Start button
+$('run-btn').onclick = async () => {
+  const target = $('target-input').value.trim();
+  if (!target) { $('start-error').textContent = 'Enter a target'; $('start-error').style.display = 'block'; return; }
+  $('start-error').style.display = 'none';
+  $('run-btn').disabled = true;
+  try {
+    const r = await fetch('/api/run', {
+      method: 'POST', headers: {'Content-Type':'application/json'},
+      body: JSON.stringify({ target, maxFindings: Number($('max-input').value) || 3 }),
+    });
+    const body = await r.json().catch(() => ({}));
+    if (!r.ok) {
+      $('start-error').textContent = body.error || `HTTP ${r.status}`;
+      $('start-error').style.display = 'block';
+    }
+  } catch (e) {
+    $('start-error').textContent = 'Network error: ' + e.message;
+    $('start-error').style.display = 'block';
+  }
+  $('run-btn').disabled = false;
+};
+
+// Initial fetch in case SSE is blocked
+fetch('/api/state').then((r) => r.json()).then((s) => { state = s; render(); }).catch(() => {});
+</script>
+</body>
+</html>

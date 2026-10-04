@@ -1,0 +1,22 @@
+{
+  "name": "patchproof",
+  "version": "1.0.0",
+  "description": "Security fixes that come with proof. Built on the real @cline/sdk.",
+  "type": "module",
+  "private": true,
+  "engines": { "node": ">=22" },
+  "scripts": {
+    "setup": "bash scripts/setup.sh",
+    "start": "node --env-file-if-exists=.env --env-file-if-exists=.env.example src/server.js",
+    "dashboard": "bash scripts/start-dashboard.sh",
+    "cli": "node --env-file-if-exists=.env --env-file-if-exists=.env.example src/cli.js",
+    "demo": "node --env-file-if-exists=.env --env-file-if-exists=.env.example src/cli.js sample-vulnerable-app --max 3",
+    "demo:replay": "PP_REPLAY=1 node --env-file-if-exists=.env --env-file-if-exists=.env.example src/cli.js sample-vulnerable-app --max 3",
+    "demo:video": "bash scripts/demo-video.sh",
+    "package": "bash scripts/package.sh"
+  },
+  "dependencies": {
+    "@cline/sdk": "^0.0.90",
+    "express": "^5.2.1"
+  }
+}

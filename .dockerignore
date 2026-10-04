@@ -1,0 +1,8 @@
+node_modules
+.git
+runs
+evidence
+.env
+*.log
+sample-vulnerable-app/node_modules
+target-repo/node_modules
